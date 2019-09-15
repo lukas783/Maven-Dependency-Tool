@@ -9,7 +9,7 @@ import java.net.URL;
 import java.util.logging.Logger;
 
 /**
- * The main entry point of the application. Creates and sets-up the main frame of the application and passes
+ * The main entry-point of the application. Creates and sets-up the main frame of the application and passes
  * control of the rest of the application to the main panel for set-up and design.
  *
  * @author Lucas Carpenter
