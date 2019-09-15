@@ -19,12 +19,8 @@ public class ProcessButtonAction implements ActionListener {
      */
     @Override
     public void actionPerformed(ActionEvent e) {
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                ProcessService.getInstance().executeProcessTasks();
-            }
-        });
-        t.start();
+        new Thread(() -> {
+            ProcessService.getInstance().executeProcessTasks();
+        }).start();
     }
 }

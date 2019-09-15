@@ -28,9 +28,9 @@ public class MainPanel extends JPanel {
 
         // Instnatiate and set-up the tabbed pane
         tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("Process", null, new ProcessPanel(), "Opens the processing panel");
+        tabbedPane.addTab("Process", null, new ProcessPanel(), "Process tasks and provides their output.");
         tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
-        tabbedPane.addTab("Config", null, new JPanel(), "Opens configuration for the tool.");
+        tabbedPane.addTab("Tasks", null, new TaskPanel(), "A list of modifiable tasks to process.");
         tabbedPane.setMnemonicAt(1, KeyEvent.VK_2);
 
         // Add components to the main panel

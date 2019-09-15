@@ -30,6 +30,7 @@ public class MavenDevelopmentTool {
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.add(new MainPanel(), BorderLayout.CENTER);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
