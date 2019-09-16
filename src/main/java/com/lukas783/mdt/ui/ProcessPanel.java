@@ -1,6 +1,7 @@
 package com.lukas783.mdt.ui;
 
 import com.lukas783.mdt.api.IProcessServiceListener;
+import com.lukas783.mdt.api.MavenTask;
 import com.lukas783.mdt.service.ProcessService;
 import com.lukas783.mdt.ui.actions.ProcessButtonAction;
 
@@ -72,5 +73,20 @@ public class ProcessPanel extends JPanel implements IProcessServiceListener {
     @Override
     public void processOutputAppend(String processOutput) {
         outputArea.append(processOutput);
+    }
+
+    @Override
+    public void taskAdded(MavenTask task) {
+
+    }
+
+    @Override
+    public void taskUpdated(MavenTask task) {
+
+    }
+
+    @Override
+    public void taskRemoved(MavenTask task) {
+
     }
 }

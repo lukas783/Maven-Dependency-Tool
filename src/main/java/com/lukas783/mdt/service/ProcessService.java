@@ -1,9 +1,13 @@
 package com.lukas783.mdt.service;
 
 import com.lukas783.mdt.api.IProcessServiceListener;
+import com.lukas783.mdt.api.MavenTask;
 import com.lukas783.mdt.util.CommandLine;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * A singleton-service class that can be called statically by any class that needs to use it.
@@ -17,6 +21,8 @@ public class ProcessService {
 
     // Declaration of listeners the service will need to fire events to
     private ArrayList<IProcessServiceListener> listeners;
+
+    private Map<UUID, MavenTask> taskMap;
 
     /**
      * The public facing method to get an instance of the class.
@@ -34,6 +40,7 @@ public class ProcessService {
      */
     private ProcessService() {
         listeners = new ArrayList<>();
+        taskMap = new HashMap<>();
     }
 
     /**
@@ -41,6 +48,83 @@ public class ProcessService {
      */
     public void executeProcessTasks() {
         CommandLine.ExecuteCommandLine("tree C:/");
+    }
+
+    /**
+     * Returns a new {@link HashMap} of tasks to be used by other parts of the application.
+     * @return A new {@link HashMap} of {@link UUID}, {@link MavenTask} mappings.
+     */
+    public Map<UUID, MavenTask> getTasks() {
+        return new HashMap<>(taskMap);
+    }
+
+    /**
+     * Returns a specific {@link MavenTask} from the set of all maven tasks held by the service.
+     * @param id The UUID to retrieve from the map of tasks.
+     * @return A {@link MavenTask} object.
+     */
+    public MavenTask getTask(UUID id) {
+        return taskMap.get(id);
+    }
+
+    /**
+     * Adds a new {@link MavenTask} to the service's map of tasks.
+     * @param task The {@link MavenTask} to add to the map.
+     * @return True if object was added successfully, False otherwise.
+     */
+    public boolean addTask(MavenTask task) {
+        if(taskMap.containsKey(task.getId()))
+            return updateTask(task);
+
+        taskMap.put(task.getId(), task);
+
+        if(taskMap.containsKey(task.getId())) {
+            for (IProcessServiceListener listener : listeners) {
+                listener.taskAdded(task);
+            }
+            appendExecutionOutput("\n\nNew maven task: " + task.getId() + " with name: " + task.getTaskName() + " has been added.\n");
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Updates an existing {@link MavenTask} from the service's map of tasks.
+     * @param task The {@link MavenTask} to update from the map of tasks.
+     * @return True if the task updated successfully, False otherwise.
+     */
+    public boolean updateTask(MavenTask task) {
+        if(!taskMap.containsKey(task.getId()))
+            return addTask(task);
+
+        taskMap.replace(task.getId(), task);
+
+        if(taskMap.containsKey(task.getId())) {
+            for (IProcessServiceListener listener : listeners) {
+                listener.taskUpdated(task);
+            }
+            appendExecutionOutput("\n\nVaven task: " + task.getId() + " with name: " + task.getTaskName() + " has been updated.\n");
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Removes a {@link MavenTask} from the service's map of tasks.
+     * @param task The {@link MavenTask} to remove from the map of tasks.
+     * @return True if the object was successfully removed, False otherwise.
+     */
+    public boolean removeTask(MavenTask task) {
+        boolean removed = taskMap.remove(task.getId(), task);
+
+        if(removed) {
+            for (IProcessServiceListener listener : listeners) {
+                listener.taskRemoved(task);
+            }
+            appendExecutionOutput("\n\nMaven task: " + task.getId() + " with name: " + task.getTaskName() + " has been removed.\n");
+            return true;
+        }
+        return false;
     }
 
     /**

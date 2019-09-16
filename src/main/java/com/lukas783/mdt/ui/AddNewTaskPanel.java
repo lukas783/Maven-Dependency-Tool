@@ -8,6 +8,7 @@ import com.lukas783.mdt.ui.actions.SubmitTaskButtonAction;
 
 import javax.swing.*;
 import java.io.File;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 /**
@@ -28,51 +29,95 @@ public class AddNewTaskPanel extends JPanel implements IUiServiceListener {
     private static final String SOUTH = SpringLayout.SOUTH;
 
     // Declaration of components used by the panel
-    private JTextArea taskName;
+    private JTextField taskName;
+    private JTextField workingDirectory;
+    private JTextField renameText;
+    private JTextField copyToDirectory;
+
     private JLabel taskNameLabel;
+    private JLabel workingDirectoryLabel;
+    private JLabel renameLabel;
+    private JLabel copyToDirectoryLabel;
+
     private JCheckBox cleanCheckbox;
+    private JCheckBox renameCheckbox;
+    private JCheckBox copyToDirectoryCheckbox;
+    private JCheckBox unpackageResult;
     private ButtonGroup goalGroup;
     private JRadioButton installRadioButton;
     private JRadioButton packageRadioButton;
-    private JTextArea workingDirectory;
-    private JLabel workingDirectoryLabel;
-    private JButton changeWorkingDirectoryButton;
-//    private JFileChooser workingDirectory;
 
+    private JButton changeWorkingDirectoryButton;
     private JButton submitTaskButton;
     private JButton cancelTaskButton;
+    private JButton copyToDirectoryButton;
+
+    private UUID taskId;
 
     /**
      * Instantiate, build, display, and attach listeners to components of the panel.
      */
     public AddNewTaskPanel() {
         super();
+        taskId = UUID.randomUUID();
+
         // Instantiate and set layout for the panel
         layout = new SpringLayout();
         setLayout(layout);
 
         // Instantiate labels for the panel
         taskNameLabel = new JLabel("Task Name");
+
         workingDirectoryLabel = new JLabel("Working Directory");
 
+        renameLabel = new JLabel("Rename Result");
+
+        copyToDirectoryLabel = new JLabel("Copy-To Directory");
+
         // Instantiate text input fields for panel
-        taskName = new JTextArea();
-        workingDirectory = new JTextArea();
+        taskName = new JTextField();
+
+        workingDirectory = new JTextField();
         workingDirectory.setEditable(false);
+
+        renameText = new JTextField();
+        renameText.setEnabled(false);
+
+        copyToDirectory = new JTextField();
+        copyToDirectory.setEditable(false);
 
         // Instantiate checkboxes for panel
         cleanCheckbox = new JCheckBox("Clean Maven Target Directory", false);
 
+        renameCheckbox = new JCheckBox("", false);
+        renameCheckbox.addActionListener(e -> renameText.setEnabled(((JCheckBox) e.getSource()).isSelected()));
+
+        copyToDirectoryCheckbox = new JCheckBox("", false);
+        copyToDirectoryCheckbox.addActionListener(e -> copyToDirectoryButton.setEnabled(((JCheckBox) e.getSource()).isSelected()));
+
+        unpackageResult = new JCheckBox("Untar/Unzip Result", false);
+
         // Instantiate radio button and button groups for panel
-        goalGroup = new ButtonGroup();
         installRadioButton = new JRadioButton("Install Artifact", false);
         packageRadioButton = new JRadioButton("Package Artifact", true);
+
+        goalGroup = new ButtonGroup();
         goalGroup.add(installRadioButton);
         goalGroup.add(packageRadioButton);
 
         // Instantiate buttons for the panel
         submitTaskButton = new JButton("Submit");
-        submitTaskButton.addActionListener(new SubmitTaskButtonAction());
+        submitTaskButton.addActionListener(new SubmitTaskButtonAction(
+                taskId,
+                taskName,
+                workingDirectory,
+                copyToDirectory,
+                renameText,
+                renameCheckbox,
+                copyToDirectoryCheckbox,
+                cleanCheckbox,
+                unpackageResult,
+                installRadioButton));
 
         cancelTaskButton = new JButton("Cancel");
         cancelTaskButton.addActionListener(new CancelButtonAction());
@@ -81,13 +126,26 @@ public class AddNewTaskPanel extends JPanel implements IUiServiceListener {
         changeWorkingDirectoryButton.addActionListener(
                 new DirectorySelectionAction("working_directory", "Select Working Directory..."));
 
+        copyToDirectoryButton = new JButton("...");
+        copyToDirectoryButton.setEnabled(false);
+        copyToDirectoryButton.addActionListener(
+                new DirectorySelectionAction("copy_to_directory", "Select Copy-To Directory..."));
+
         // Add components to the panel
         add(taskNameLabel);
         add(taskName);
         add(workingDirectoryLabel);
         add(workingDirectory);
         add(changeWorkingDirectoryButton);
+        add(renameCheckbox);
+        add(renameLabel);
+        add(renameText);
+        add(copyToDirectoryLabel);
+        add(copyToDirectory);
+        add(copyToDirectoryButton);
+        add(copyToDirectoryCheckbox);
         add(cleanCheckbox);
+        add(unpackageResult);
         add(installRadioButton);
         add(packageRadioButton);
         add(submitTaskButton);
@@ -100,18 +158,16 @@ public class AddNewTaskPanel extends JPanel implements IUiServiceListener {
         // Set constraints for taskName
         layout.putConstraint(NORTH, taskName, 5, SOUTH, taskNameLabel);
         layout.putConstraint(WEST, taskName, 0, WEST, taskNameLabel);
-        layout.putConstraint(SOUTH, taskName, 15, NORTH, taskName);
-        layout.putConstraint(EAST, taskName, 300, WEST, taskName);
+        layout.putConstraint(EAST, taskName, 400, WEST, taskName);
 
         // Set constraints for workingDirectoryLabel
-        layout.putConstraint(NORTH, workingDirectoryLabel, 10, SOUTH, taskName);
+        layout.putConstraint(NORTH, workingDirectoryLabel, 15, SOUTH, taskName);
         layout.putConstraint(WEST, workingDirectoryLabel, 0, WEST, taskName);
 
         // Set constraints for workingDirectory
         layout.putConstraint(NORTH, workingDirectory, 5, SOUTH, workingDirectoryLabel);
         layout.putConstraint(WEST, workingDirectory, 0, WEST, workingDirectoryLabel);
-        layout.putConstraint(SOUTH, workingDirectory, 15, NORTH, workingDirectory);
-        layout.putConstraint(EAST, workingDirectory, 270, WEST, workingDirectory);
+        layout.putConstraint(EAST, workingDirectory, 370, WEST, workingDirectory);
 
         // Set constraints for changeWorkingDirectoryButton
         layout.putConstraint(NORTH, changeWorkingDirectoryButton, 0, NORTH, workingDirectory);
@@ -119,9 +175,47 @@ public class AddNewTaskPanel extends JPanel implements IUiServiceListener {
         layout.putConstraint(SOUTH, changeWorkingDirectoryButton, 0, SOUTH, workingDirectory);
         layout.putConstraint(EAST, changeWorkingDirectoryButton, 25, WEST, changeWorkingDirectoryButton);
 
+        // Set constraints for renameLabel
+        layout.putConstraint(NORTH, renameLabel, 15, SOUTH, workingDirectory);
+        layout.putConstraint(WEST, renameLabel, 0, WEST, workingDirectory);
+
+        // Set constraints for renameCheckbox
+        layout.putConstraint(NORTH, renameCheckbox, 10, SOUTH, renameLabel);
+        layout.putConstraint(WEST, renameCheckbox, 0, WEST, renameLabel);
+
+        // Set constraints for renameText
+        layout.putConstraint(NORTH, renameText, 0, NORTH, renameCheckbox);
+        layout.putConstraint(WEST, renameText, 5, EAST, renameCheckbox);
+        layout.putConstraint(SOUTH, renameText, 0, SOUTH, renameCheckbox);
+        layout.putConstraint(EAST, renameText, 380, WEST, renameText);
+
+        // Set constraints for copyToDirectoryLabbel
+        layout.putConstraint(NORTH, copyToDirectoryLabel, 15, SOUTH, renameCheckbox);
+        layout.putConstraint(WEST, copyToDirectoryLabel, 0, WEST, renameCheckbox);
+
+        // Set cosntraints for copyToDirectoryCheckbox
+        layout.putConstraint(NORTH, copyToDirectoryCheckbox, 10, SOUTH, copyToDirectoryLabel);
+        layout.putConstraint(WEST, copyToDirectoryCheckbox, 0, WEST, copyToDirectoryLabel);
+
+        // Set constraints for copyToDirectory
+        layout.putConstraint(NORTH, copyToDirectory, 0, NORTH, copyToDirectoryCheckbox);
+        layout.putConstraint(WEST, copyToDirectory, 5, EAST, copyToDirectoryCheckbox);
+        layout.putConstraint(SOUTH, copyToDirectory, 0, SOUTH, copyToDirectoryCheckbox);
+        layout.putConstraint(EAST, copyToDirectory, 350, WEST, copyToDirectory);
+
+        // Set constraints for copyToDirectoryButton
+        layout.putConstraint(NORTH, copyToDirectoryButton, 0, NORTH, copyToDirectory);
+        layout.putConstraint(WEST, copyToDirectoryButton, 5, EAST, copyToDirectory);
+        layout.putConstraint(SOUTH, copyToDirectoryButton, 0, SOUTH, copyToDirectory);
+        layout.putConstraint(EAST, copyToDirectoryButton, 25, WEST, copyToDirectoryButton);
+
         // Set constraints for cleanCheckbox
-        layout.putConstraint(NORTH, cleanCheckbox, 10, SOUTH, workingDirectory);
-        layout.putConstraint(WEST, cleanCheckbox, 0, WEST, workingDirectory);
+        layout.putConstraint(NORTH, cleanCheckbox, 15, SOUTH, copyToDirectoryCheckbox);
+        layout.putConstraint(WEST, cleanCheckbox, 0, WEST, copyToDirectoryCheckbox);
+
+        // Set constraints for unpackageResult
+        layout.putConstraint(NORTH, unpackageResult, 0, NORTH, cleanCheckbox);
+        layout.putConstraint(WEST, unpackageResult, 30, EAST, cleanCheckbox);
 
         // Set constraints for packageRadioButton
         layout.putConstraint(NORTH, packageRadioButton, 10, SOUTH, cleanCheckbox);
@@ -148,10 +242,22 @@ public class AddNewTaskPanel extends JPanel implements IUiServiceListener {
         UiService.getInstance().addListener(this);
     }
 
+    /**
+     * Method required by {@link IUiServiceListener}. Listens to the {@link UiService} for a file chooser to
+     * send an updated directory for a UI specific componentTag.
+     * @param componentTag The tag that an implementation of {@link IUiServiceListener} can use to update a component
+     * @param directory The changed directory, as a {@link File}
+     */
     @Override
     public void directoryUpdated(String componentTag, File directory) {
-        if(componentTag.equalsIgnoreCase("working_directory")) {
-            workingDirectory.setText(directory.toString());
+        switch(componentTag) {
+            case "working_directory":
+                workingDirectory.setText(directory.toString());
+                break;
+
+            case "copy_to_directory":
+                copyToDirectory.setText(directory.toString());
+                break;
         }
     }
 }
