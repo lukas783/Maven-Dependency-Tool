@@ -35,6 +35,7 @@ public class MavenTask {
      * @param cleanTarget Whether to run the clean argument when building the process.
      * @param unpackage Whether to unpackage the resulting package.
      * @param doInstall Whether to run an install goal or a package goal.
+     * @param enabled Whether the task should be executed when processing.
      */
     private MavenTask(UUID id,
                       String taskName,

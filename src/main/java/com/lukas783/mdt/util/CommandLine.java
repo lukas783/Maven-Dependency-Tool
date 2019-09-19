@@ -27,14 +27,16 @@ public class CommandLine {
      * output of the process.
      * @param cmd The command to execute
      */
-    public static void ExecuteCommandLine(String cmd) {
+    public static void ExecuteCommandLine(File workingDirectory, String cmd) {
         try {
             // Build the process as either a windows or linux process
             ProcessBuilder builder;
             if(isWindows)
-                builder = new ProcessBuilder("cmd.exe", "/c", cmd);
+                builder = new ProcessBuilder("cmd.exe", "/C", cmd);
             else
                 builder = new ProcessBuilder("/bin/sh", "-c", cmd);
+
+            builder.directory(workingDirectory);
 
             // Gather environment variables (Not used atm, may need to use it later, who knows)
             Map<String, String> env = builder.environment();
@@ -55,6 +57,7 @@ public class CommandLine {
             // Wait for the process to finish, then destroy the process and leave the function
             p.waitFor();
             p.destroy();
+            logger.info("Process with string: " +cmd+" finished running.");
         } catch(IOException ioe) {
             logger.log(Level.SEVERE, "Unable to redirect i/o for command: " + cmd, ioe);
         } catch(InterruptedException ie) {

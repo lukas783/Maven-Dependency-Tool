@@ -4,10 +4,12 @@ import com.lukas783.mdt.api.IProcessServiceListener;
 import com.lukas783.mdt.api.MavenTask;
 import com.lukas783.mdt.util.CommandLine;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 /**
  * A singleton-service class that can be called statically by any class that needs to use it.
@@ -15,6 +17,9 @@ import java.util.UUID;
  * as the service sees fit. The service is responsible for handling processing of tasks to-do.
  */
 public class ProcessService {
+
+    // Declaration of logger for debug/error handling messages.
+    private static final Logger logger = Logger.getLogger(ProcessService.class.getName());
 
     // Declaration of the internal instance to always use
     private static ProcessService INSTANCE;
@@ -44,10 +49,35 @@ public class ProcessService {
     }
 
     /**
-     * Executes the current tasks by using the {@link CommandLine#ExecuteCommandLine(String)} method
+     * Executes the current tasks by using the {@link CommandLine#ExecuteCommandLine(File, String)} method
      */
     public void executeProcessTasks() {
-        CommandLine.ExecuteCommandLine("tree C:/");
+        for(MavenTask task : taskMap.values()) {
+            StringBuilder commandString = new StringBuilder();
+
+            // Build the command to traverse to the proepr working directory.
+            File workingDirectory = new File(task.getWorkingDirectory());
+
+            if(!workingDirectory.isDirectory()) {
+                logger.warning("Provided MavenTask: "+task.getTaskName()+" has bad working directory.");
+                continue;
+            }
+
+            // Build the actual maven command
+            commandString.append("mvn ");
+
+            if(task.cleanTarget())
+                commandString.append("clean ");
+
+            if(task.doInstall())
+                commandString.append("install ");
+            else
+                commandString.append("package");
+
+
+
+            CommandLine.ExecuteCommandLine(workingDirectory, commandString.toString());
+        }
     }
 
     /**
