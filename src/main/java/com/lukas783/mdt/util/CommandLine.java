@@ -25,6 +25,7 @@ public class CommandLine {
      * Executes a command line statement. Builds a process and executes the process, redirecting
      * output of the process to a BufferedReader and serving the {@link ProcessService} with the
      * output of the process.
+     * @param workingDirectory The working directory to swap to during execution.
      * @param cmd The command to execute
      */
     public static void ExecuteCommandLine(File workingDirectory, String cmd) {
