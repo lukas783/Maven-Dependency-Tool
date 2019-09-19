@@ -5,10 +5,7 @@ import com.lukas783.mdt.api.MavenTask;
 import com.lukas783.mdt.util.CommandLine;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -27,7 +24,7 @@ public class ProcessService {
     // Declaration of listeners the service will need to fire events to
     private ArrayList<IProcessServiceListener> listeners;
 
-    private Map<UUID, MavenTask> taskMap;
+    private ArrayList<MavenTask> taskList;
 
     /**
      * The public facing method to get an instance of the class.
@@ -45,116 +42,193 @@ public class ProcessService {
      */
     private ProcessService() {
         listeners = new ArrayList<>();
-        taskMap = new HashMap<>();
+        taskList = new ArrayList<>();
     }
 
     /**
      * Executes the current tasks by using the {@link CommandLine#ExecuteCommandLine(File, String)} method
      */
     public void executeProcessTasks() {
-        for(MavenTask task : taskMap.values()) {
-            StringBuilder commandString = new StringBuilder();
+        for(MavenTask task : taskList) {
+            if (task.getEnabled()) {
+                appendExecutionOutput(
+                        "Processing Task: " +
+                                task.getTaskName() +
+                                System.getProperty("line.separator"));
 
-            // Build the command to traverse to the proepr working directory.
-            File workingDirectory = new File(task.getWorkingDirectory());
+                StringBuilder commandString = new StringBuilder();
 
-            if(!workingDirectory.isDirectory()) {
-                logger.warning("Provided MavenTask: "+task.getTaskName()+" has bad working directory.");
-                continue;
+                // Build the command to traverse to the proper working directory.
+                File workingDirectory = new File(task.getWorkingDirectory());
+
+                if (!workingDirectory.isDirectory()) {
+                    logger.warning("Provided MavenTask: " + task.getTaskName() + " has bad working directory.");
+                    continue;
+                }
+
+                // Build the actual maven command
+                commandString.append("mvn ");
+
+                if (task.cleanTarget())
+                    commandString.append("clean ");
+
+                if (task.doInstall())
+                    commandString.append("install ");
+                else
+                    commandString.append("package");
+
+
+                CommandLine.ExecuteCommandLine(workingDirectory, commandString.toString());
+            } else {
+                appendExecutionOutput(
+                        "Skipping Task: " +
+                                task.getTaskName() +
+                                " due to not being enabled." +
+                                System.getProperty("line.separator"));
             }
-
-            // Build the actual maven command
-            commandString.append("mvn ");
-
-            if(task.cleanTarget())
-                commandString.append("clean ");
-
-            if(task.doInstall())
-                commandString.append("install ");
-            else
-                commandString.append("package");
-
-
-
-            CommandLine.ExecuteCommandLine(workingDirectory, commandString.toString());
         }
     }
 
     /**
-     * Returns a new {@link HashMap} of tasks to be used by other parts of the application.
-     * @return A new {@link HashMap} of {@link UUID}, {@link MavenTask} mappings.
+     * Returns a new {@link ArrayList} of tasks to be used by other parts of the application.
+     * @return A new {@link ArrayList} of {@link MavenTask} objects held by the service.
      */
-    public Map<UUID, MavenTask> getTasks() {
-        return new HashMap<>(taskMap);
+    public ArrayList<MavenTask> getTasks() {
+        return new ArrayList<>(taskList);
     }
 
     /**
-     * Returns a specific {@link MavenTask} from the set of all maven tasks held by the service.
-     * @param id The UUID to retrieve from the map of tasks.
-     * @return A {@link MavenTask} object.
+     * Returns a specific {@link MavenTask} from the list of all maven tasks held by the service.
+     * @param id The UUID to retrieve from the list of tasks.
+     * @return A {@link MavenTask} object, or null if the task doesn't exist.
      */
     public MavenTask getTask(UUID id) {
-        return taskMap.get(id);
+        for(MavenTask task : taskList) {
+            if(task.getId().equals(id))
+                return task;
+        }
+        return null;
     }
 
     /**
-     * Adds a new {@link MavenTask} to the service's map of tasks.
-     * @param task The {@link MavenTask} to add to the map.
+     * Returns the index in the processes internal task list of a specific {@link MavenTask}.
+     * @param id The {@link UUID} of the task to retrieve the index of.
+     * @return The index of the {@link MavenTask} in the processes internal task list, or -1 if it doesn't exist.
+     */
+    public int getTaskIndex(UUID id) {
+        for(MavenTask task: taskList) {
+            if(task.getId().equals(id))
+                return taskList.indexOf(task);
+        }
+        return -1;
+    }
+
+    /**
+     * Adds a new {@link MavenTask} to the service's list of tasks.
+     * @param task The {@link MavenTask} to add to the list.
      * @return True if object was added successfully, False otherwise.
      */
     public boolean addTask(MavenTask task) {
-        if(taskMap.containsKey(task.getId()))
+        if(getTask(task.getId()) != null)
             return updateTask(task);
 
-        taskMap.put(task.getId(), task);
+        taskList.add(task);
 
-        if(taskMap.containsKey(task.getId())) {
+        if(getTask(task.getId()) != null) {
             for (IProcessServiceListener listener : listeners) {
                 listener.taskAdded(task);
             }
-            appendExecutionOutput("\n\nNew maven task: " + task.getId() + " with name: " + task.getTaskName() + " has been added.\n");
+            appendExecutionOutput(
+                    "New maven task: " +
+                            task.getId() +
+                            " with name: " +
+                            task.getTaskName() +
+                            " has been added." +
+                            System.getProperty("line.separator"));
             return true;
         }
         return false;
     }
 
     /**
-     * Updates an existing {@link MavenTask} from the service's map of tasks.
-     * @param task The {@link MavenTask} to update from the map of tasks.
+     * Updates an existing {@link MavenTask} from the service's list of tasks.
+     * @param task The {@link MavenTask} to update from the list of tasks.
      * @return True if the task updated successfully, False otherwise.
      */
     public boolean updateTask(MavenTask task) {
-        if(!taskMap.containsKey(task.getId()))
+        int indexToUpdate = getTaskIndex(task.getId());
+
+        if(indexToUpdate == -1)
             return addTask(task);
 
-        taskMap.replace(task.getId(), task);
 
-        if(taskMap.containsKey(task.getId())) {
+        taskList.set(indexToUpdate, task);
+
+        if(getTask(task.getId()) != null) {
             for (IProcessServiceListener listener : listeners) {
                 listener.taskUpdated(task);
             }
-            appendExecutionOutput("\n\nVaven task: " + task.getId() + " with name: " + task.getTaskName() + " has been updated.\n");
+            appendExecutionOutput(
+                    "Maven task: " +
+                            task.getId() +
+                            " with name: " +
+                            task.getTaskName() +
+                            " has been updated." +
+                            System.getProperty("line.separator"));
             return true;
         }
         return false;
     }
 
     /**
-     * Removes a {@link MavenTask} from the service's map of tasks.
-     * @param task The {@link MavenTask} to remove from the map of tasks.
+     * Removes a {@link MavenTask} from the service's list of tasks.
+     * @param task The {@link MavenTask} to remove from the list of tasks.
      * @return True if the object was successfully removed, False otherwise.
      */
     public boolean removeTask(MavenTask task) {
-        boolean removed = taskMap.remove(task.getId(), task);
+        boolean removed = taskList.remove(task);
 
         if(removed) {
             for (IProcessServiceListener listener : listeners) {
                 listener.taskRemoved(task);
             }
-            appendExecutionOutput("\n\nMaven task: " + task.getId() + " with name: " + task.getTaskName() + " has been removed.\n");
+            appendExecutionOutput(
+                    "Maven task: " +
+                            task.getId() +
+                            " with name: " +
+                            task.getTaskName() +
+                            " has been removed." +
+                            System.getProperty("line.separator"));
             return true;
         }
         return false;
+    }
+
+    /**
+     * Reorders elements in {@link #taskList} by swapping positions. This is a better method
+     * than just removing the element and inserting at the proper position as the list doesn't
+     * require resizing to a smaller, then larger size. There may even be a better way to implement
+     * this kind of re-ordering of the list, but for now, the list is small, and a bubble-sort-like
+     * implementation for re-ordering will suffice.
+     * @param from The index the {@link MavenTask} to be re-ordered resides at.
+     * @param to The index to move the {@link MavenTask} to.
+     */
+    public void reorderTaskPosition(int from, int to) {
+        // Handle moving the item towards the beginning of the table
+        if (from > to) {
+            while (from != to) {
+                Collections.swap(taskList, from, from - 1);
+                from--;
+            }
+        // Handle moving the item towards the end of the table
+        } else {
+            // subtracting 1 from the 'to' side of things is required when moving up, as off-by-one error otherwise.
+            to--;
+            while(from != to) {
+                Collections.swap(taskList, from, from + 1);
+                from++;
+            }
+        }
     }
 
     /**

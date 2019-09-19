@@ -39,7 +39,7 @@ public class ProcessPanel extends JPanel implements IProcessServiceListener {
         setLayout(layout);
 
         // Instantiate text area and its scroll pane
-        outputArea = new JTextArea(20, 80);
+        outputArea = new JTextArea(20, 120);
         ((DefaultCaret)outputArea.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
         scrollPane = new JScrollPane(outputArea);
 

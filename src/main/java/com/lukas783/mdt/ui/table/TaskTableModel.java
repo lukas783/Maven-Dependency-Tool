@@ -4,24 +4,22 @@ import com.lukas783.mdt.api.MavenTask;
 import com.lukas783.mdt.service.ProcessService;
 
 import javax.swing.table.AbstractTableModel;
-import java.util.ArrayList;
+import java.util.logging.Logger;
 
 /**
  * The table model used to display and modify a {@link MavenTask} object.
  *
  * @author Lucas Carpenter
  */
-public class TaskTableModel extends AbstractTableModel {
+public class TaskTableModel extends AbstractTableModel implements Reorderable {
 
-    // Declaration of internal variables used by the table model.
-    private ArrayList<MavenTask> taskList;
+    // Declaration of logger for debug/error handling messages.
+    private static final Logger logger = Logger.getLogger(TaskTableModel.class.getName());
 
     /**
      * Constructs a new table model. Builds the internal list of values in the table.
      */
-    public TaskTableModel() {
-        taskList = new ArrayList<>(ProcessService.getInstance().getTasks().values());
-    }
+    public TaskTableModel() { }
 
     /**
      * Retrieves the number of rows in the table.
@@ -29,7 +27,7 @@ public class TaskTableModel extends AbstractTableModel {
      */
     @Override
     public int getRowCount() {
-        return taskList.size();
+        return ProcessService.getInstance().getTasks().size();
     }
 
     /**
@@ -38,7 +36,7 @@ public class TaskTableModel extends AbstractTableModel {
      */
     @Override
     public int getColumnCount() {
-        return 10;
+        return 11;
     }
 
     /**
@@ -47,7 +45,7 @@ public class TaskTableModel extends AbstractTableModel {
      */
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
-        MavenTask task = taskList.get(rowIndex);
+        MavenTask task = ProcessService.getInstance().getTasks().get(rowIndex);
         switch(columnIndex) {
             case 1: return task.getEnabled();
             case 2: return task.getTaskName();
@@ -56,8 +54,9 @@ public class TaskTableModel extends AbstractTableModel {
             case 5: return task.getRenameString();
             case 6: return task.doCopy();
             case 7: return task.doRename();
-            case 8: return task.doUnpackage();
-            case 9: return task.doInstall();
+            case 8: return task.cleanTarget();
+            case 9: return task.doUnpackage();
+            case 10: return task.doInstall();
             default: return "";
         }
     }
@@ -76,8 +75,9 @@ public class TaskTableModel extends AbstractTableModel {
             case 5: return "Rename String";
             case 6: return "Copy Result?";
             case 7: return "Rename Result?";
-            case 8: return "Untar/Unzip Result?";
-            case 9: return "Install/Package";
+            case 8: return "Clean Target Directory?";
+            case 9: return "Untar/Unzip Result?";
+            case 10: return "Install/Package";
             default: return "";
         }
     }
@@ -92,14 +92,15 @@ public class TaskTableModel extends AbstractTableModel {
             case 1:
             case 6:
             case 7:
-            case 8: return Boolean.class;
+            case 8:
+            case 9: return Boolean.class;
 
             case 2:
             case 3:
             case 4:
             case 5: return String.class;
 
-            case 9: return InstallPackageClass.class;
+            case 10: return InstallPackageClass.class;
             default: return Object.class;
         }
     }
@@ -119,7 +120,8 @@ public class TaskTableModel extends AbstractTableModel {
      */
     @Override
     public void setValueAt(Object value, int row, int col) {
-        MavenTask.Builder builder  = new MavenTask.Builder(taskList.get(row));
+        MavenTask.Builder builder  = new MavenTask.Builder(
+                ProcessService.getInstance().getTasks().get(row));
         switch(col) {
             case 1: builder.enabled((Boolean)value); break;
             case 2: builder.taskName((String)value); break;
@@ -128,8 +130,9 @@ public class TaskTableModel extends AbstractTableModel {
             case 5: builder.renameString((String)value); break;
             case 6: builder.copy((Boolean)value); break;
             case 7: builder.rename((Boolean)value); break;
-            case 8: builder.unpackage((Boolean) value); break;
-            case 9: builder.doInstall((Boolean)value); break;
+            case 8: builder.cleanTarget((Boolean)value); break;
+            case 9: builder.unpackage((Boolean) value); break;
+            case 10: builder.doInstall((Boolean)value); break;
 
             default:// ignore
                 return;
@@ -144,31 +147,24 @@ public class TaskTableModel extends AbstractTableModel {
     /**
      * Adds a new {@link MavenTask} object to the table model.
      * @param task The {@link MavenTask} to insert into the table.
+     * @deprecated Due to the list being derived from the {@link ProcessService} instead of held locally.
      */
     public void addTask(MavenTask task) {
-        taskList.add(task);
-        int row = taskList.indexOf(task);
-        fireTableRowsInserted(row, row);
     }
 
     /**
      * Updates the tasks in the table to reflect the list in {@link ProcessService#getTasks()}.
      */
     public void updateTasks() {
-        taskList = new ArrayList<>(ProcessService.getInstance().getTasks().values());
         fireTableDataChanged();
     }
 
     /**
      * Removes an existing {@link MavenTask} object from the table.
      * @param task The {@link MavenTask} to remove from the table.
+     * @deprecated Due to the list being derived from the {@link ProcessService} instead of held locally.
      */
     public void removeTask(MavenTask task) {
-        if (taskList.contains(task)) {
-            int row = taskList.indexOf(task);
-            taskList.remove(row);
-            fireTableRowsDeleted(row, row);
-        }
     }
 
     /**
@@ -177,7 +173,22 @@ public class TaskTableModel extends AbstractTableModel {
      * @return A {@link MavenTask} object.
      */
     public MavenTask getTaskAt(int index) {
-        return taskList.get(index);
+        return ProcessService.getInstance().getTasks().get(index);
     }
 
+    /**
+     * Implementation of {@link Reorderable#reorder(int, int)} to supply a method of alerting the model
+     * of a request to re-order table elements provided by {@link TaskTableTransferHandler}
+     * @param fromIndex The index of the initial drag event
+     * @param toIndex The index of the release event
+     */
+    @Override
+    public void reorder(int fromIndex, int toIndex) {
+        if(toIndex - 1 == fromIndex)
+            return;
+
+        ProcessService.getInstance().reorderTaskPosition(fromIndex, toIndex);
+        updateTasks();
+        fireTableDataChanged();
+    }
 }

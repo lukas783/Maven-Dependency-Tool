@@ -5,10 +5,7 @@ import com.lukas783.mdt.api.MavenTask;
 import com.lukas783.mdt.service.ProcessService;
 import com.lukas783.mdt.ui.actions.AddNewTaskButtonAction;
 import com.lukas783.mdt.ui.actions.RemoveTaskButtonAction;
-import com.lukas783.mdt.ui.table.InstallPackageClass;
-import com.lukas783.mdt.ui.table.InstallPackageEditor;
-import com.lukas783.mdt.ui.table.InstallPackageRenderer;
-import com.lukas783.mdt.ui.table.TaskTableModel;
+import com.lukas783.mdt.ui.table.*;
 
 import javax.swing.*;
 import java.util.logging.Logger;
@@ -49,6 +46,9 @@ public class TaskPanel extends JPanel implements IProcessServiceListener {
         // Instantiate table components for the panel
         taskTableModel = new TaskTableModel();
         taskTable = new JTable(taskTableModel);
+        taskTable.setDragEnabled(true);
+        taskTable.setDropMode(DropMode.INSERT_ROWS);
+        taskTable.setTransferHandler(new TaskTableTransferHandler(taskTable));
         taskTable.setDefaultRenderer(InstallPackageClass.class, new InstallPackageRenderer());
         taskTable.setDefaultEditor(InstallPackageClass.class, new InstallPackageEditor());
         taskTableScrollPane = new JScrollPane(taskTable);
@@ -76,8 +76,8 @@ public class TaskPanel extends JPanel implements IProcessServiceListener {
         // Declare layout constraints for taskTableScrollPane
         layout.putConstraint(NORTH, taskTableScrollPane, 30, SOUTH, addNewTaskButton);
         layout.putConstraint(WEST, taskTableScrollPane, 0, WEST, addNewTaskButton);
-        layout.putConstraint(EAST, taskTableScrollPane, -5, EAST, this);
-        layout.putConstraint(SOUTH, taskTableScrollPane, -5, SOUTH, this);
+        layout.putConstraint(EAST, this, 5, EAST, taskTableScrollPane);
+        layout.putConstraint(SOUTH, this, 5, SOUTH, taskTableScrollPane);
 
         // Attach any listeners needed by the panel.
         ProcessService.getInstance().addListener(this);
@@ -97,7 +97,7 @@ public class TaskPanel extends JPanel implements IProcessServiceListener {
      */
     @Override
     public void taskAdded(MavenTask task) {
-        taskTableModel.addTask(task);
+        taskTableModel.updateTasks();
     }
 
     /**
@@ -117,6 +117,6 @@ public class TaskPanel extends JPanel implements IProcessServiceListener {
      */
     @Override
     public void taskRemoved(MavenTask task) {
-        taskTableModel.removeTask(task);
+        taskTableModel.updateTasks();
     }
 }
