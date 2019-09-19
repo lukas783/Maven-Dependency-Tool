@@ -21,6 +21,7 @@ public class MavenTask {
     private boolean cleanTarget;
     private boolean unpackage;
     private boolean doInstall;
+    private boolean enabled;
 
     /**
      * Constructs a MavenTask object to be used elsewhere.
@@ -44,7 +45,8 @@ public class MavenTask {
                       boolean rename,
                       boolean cleanTarget,
                       boolean unpackage,
-                      boolean doInstall) {
+                      boolean doInstall,
+                      boolean enabled) {
         this.id = id;
         this.taskName = taskName;
         this.workingDirectory = workingDirectory;
@@ -55,6 +57,7 @@ public class MavenTask {
         this.cleanTarget = cleanTarget;
         this.unpackage = unpackage;
         this.doInstall = doInstall;
+        this.enabled = enabled;
     }
 
     /**
@@ -138,6 +141,22 @@ public class MavenTask {
     }
 
     /**
+     * Retrieves whether the task should be ran or not.
+     * @return True if the task should execute, False otherwise.
+     */
+    public boolean getEnabled() {
+        return enabled;
+    }
+
+    /**
+     * Sets whether the task should be ran or not.
+     * @param enabled Whether to execute the task or not.
+     */
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    /**
      * A Builder to force proper creation of the {@link MavenTask} object.
      */
     public static class Builder {
@@ -153,12 +172,33 @@ public class MavenTask {
         private boolean cleanTarget;
         private boolean unpackage;
         private boolean doInstall;
+        private boolean enabled;
 
         /**
          * Required constructor to instantiate a new builder.
          */
-        public Builder() { }
+        public Builder() {
+            this.id = UUID.randomUUID();
+            this.enabled = false;
+        }
 
+        /**
+         * Copy-constructor to isntantiate a new builder from an existing object.
+         * @param task The existing {@link MavenTask} object to copy values from.
+         */
+        public Builder(MavenTask task) {
+            this.id = task.id;
+            this.taskName = task.taskName;
+            this.workingDirectory = task.workingDirectory;
+            this.copyToDirectory = task.copyToDirectory;
+            this.renameString = task.renameString;
+            this.copy = task.copy;
+            this.rename = task.rename;
+            this.cleanTarget = task.cleanTarget;
+            this.unpackage = task.unpackage;
+            this.doInstall = task.doInstall;
+            this.enabled = task.enabled;
+        }
         /**
          * Sets the UUID for the builder.
          * @param id A valid UUID to identify the {@link MavenTask} object.
@@ -260,13 +300,26 @@ public class MavenTask {
         }
 
         /**
+         * Sets the enabled flag for the builder.
+         * @param enabled The enabled flag of the {@link MavenTask} object.
+         * @return A modified builder.
+         */
+        public Builder enabled(boolean enabled) {
+            this.enabled = enabled;
+            return this;
+        }
+
+        /**
          * A helper function of the builder to validate the builder has enough information
          * to create a fully functioning {@link MavenTask} object.
          * @return True if the builder contains enough valid information, False otherwise.
          */
         private boolean isValid() {
-            return id != null && taskName.length() > 0 && workingDirectory.length() > 0 &&
-                    (!rename || renameString.length() > 0) && (!copy || copyToDirectory.length() > 0);
+            return id != null &&
+                    taskName.length() > 0 &&
+                    workingDirectory.length() > 0 &&
+                    (!rename || renameString.length() > 0) &&
+                    (!copy || copyToDirectory.length() > 0);
         }
 
         /**
@@ -276,7 +329,7 @@ public class MavenTask {
         public MavenTask build() {
             if(isValid())
                 return new MavenTask(id, taskName, workingDirectory, copyToDirectory, renameString,
-                        copy, rename, cleanTarget, unpackage, doInstall);
+                        copy, rename, cleanTarget, unpackage, doInstall, enabled);
             return null;
         }
     }

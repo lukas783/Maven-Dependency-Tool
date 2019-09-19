@@ -107,17 +107,7 @@ public class AddNewTaskPanel extends JPanel implements IUiServiceListener {
 
         // Instantiate buttons for the panel
         submitTaskButton = new JButton("Submit");
-        submitTaskButton.addActionListener(new SubmitTaskButtonAction(
-                taskId,
-                taskName,
-                workingDirectory,
-                copyToDirectory,
-                renameText,
-                renameCheckbox,
-                copyToDirectoryCheckbox,
-                cleanCheckbox,
-                unpackageResult,
-                installRadioButton));
+        submitTaskButton.addActionListener(new SubmitTaskButtonAction(this));
 
         cancelTaskButton = new JButton("Cancel");
         cancelTaskButton.addActionListener(new CancelButtonAction());
@@ -259,5 +249,85 @@ public class AddNewTaskPanel extends JPanel implements IUiServiceListener {
                 copyToDirectory.setText(directory.toString());
                 break;
         }
+    }
+
+    /**
+     * Retrieves panel's field value for task name.
+     * @return String with panel's field value for task name.
+     */
+    public String getTaskName() {
+        return taskName.getText();
+    }
+
+    /**
+     * Retrieves panel's field value for working directory.
+     * @return String with panel's field value for working directory.
+     */
+    public String getWorkingDirectory() {
+        return workingDirectory.getText();
+    }
+
+    /**
+     * Retrieves panel's field value for renaming file.
+     * @return String with panel's field value for renaming file.
+     */
+    public String getRenameText() {
+        return renameText.getText();
+    }
+
+    /**
+     * Retrieves panel's field value for copy-to directory.
+     * @return String with panel's field value for copy-to directory.
+     */
+    public String getCopyToDirectory() {
+        return copyToDirectory.getText();
+    }
+
+    /**
+     * Retrieves panel's field value for whether to pre-pend 'clean' to task.
+     * @return True if 'clean' should be pre-pended to task command, False otherwise.
+     */
+    public boolean getCleanCheckbox() {
+        return cleanCheckbox.isSelected();
+    }
+
+    /**
+     * Retrieves panel's field value for whether to rename file.
+     * @return True if file should be renamed, False otherwise.
+     */
+    public boolean getRenameCheckbox() {
+        return renameCheckbox.isSelected();
+    }
+
+    /**
+     * Retrieves panel's field value for whether copy output to new directory.
+     * @return True if result should be copied to a different directory, False otherwise.
+     */
+    public boolean getCopyToDirectoryCheckbox() {
+        return copyToDirectoryCheckbox.isSelected();
+    }
+
+    /**
+     * Retrieves panel's field value for whether to untar/unzip result.
+     * @return True if result should be untarred/unzipped, False otherwise.
+     */
+    public boolean getUnpackageResult() {
+        return unpackageResult.isSelected();
+    }
+
+    /**
+     * Retrieves panel's field value for whether to run the install goal.
+     * @return True if the maven goal should be to install, False otherwise.
+     */
+    public boolean getInstallRadioButton() {
+        return installRadioButton.isSelected();
+    }
+
+    /**
+     * Retrieves the panel's internal UUID, this becomes the task's internal UUID
+     * @return The UUID of the panel.
+     */
+    public UUID getTaskId() {
+        return taskId;
     }
 }
