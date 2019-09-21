@@ -176,7 +176,6 @@ public class AddNewTaskPanel extends JPanel implements IUiServiceListener {
         // Set constraints for renameText
         layout.putConstraint(NORTH, renameText, 0, NORTH, renameCheckbox);
         layout.putConstraint(WEST, renameText, 5, EAST, renameCheckbox);
-        layout.putConstraint(SOUTH, renameText, 0, SOUTH, renameCheckbox);
         layout.putConstraint(EAST, renameText, 380, WEST, renameText);
 
         // Set constraints for copyToDirectoryLabbel
@@ -190,7 +189,6 @@ public class AddNewTaskPanel extends JPanel implements IUiServiceListener {
         // Set constraints for copyToDirectory
         layout.putConstraint(NORTH, copyToDirectory, 0, NORTH, copyToDirectoryCheckbox);
         layout.putConstraint(WEST, copyToDirectory, 5, EAST, copyToDirectoryCheckbox);
-        layout.putConstraint(SOUTH, copyToDirectory, 0, SOUTH, copyToDirectoryCheckbox);
         layout.putConstraint(EAST, copyToDirectory, 350, WEST, copyToDirectory);
 
         // Set constraints for copyToDirectoryButton

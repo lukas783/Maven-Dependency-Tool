@@ -6,6 +6,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.FileNotFoundException;
 import java.net.URL;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -26,12 +27,32 @@ public class MavenDevelopmentTool {
      * @param args arguments passed to the application through command-line.
      */
     public static void main(String[] args) {
-        JFrame frame = new JFrame("Maven Development Tool");
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.add(new MainPanel(), BorderLayout.CENTER);
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
+        try {
+            boolean landfSet = false;
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    landfSet = true;
+                }
+            }
+            if(!landfSet)
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+
+            JFrame frame = new JFrame("Maven Development Tool");
+            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            frame.add(new MainPanel(), BorderLayout.CENTER);
+            frame.pack();
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+        } catch(UnsupportedLookAndFeelException ulafe) {
+            logger.log(Level.SEVERE, "Look & Feel style not supported.", ulafe);
+        } catch(InstantiationException ie) {
+            logger.log(Level.SEVERE, "Unable to instantiate system Look & Feel.", ie);
+        } catch(IllegalAccessException iae) {
+            logger.log(Level.SEVERE, "You do not have permission to access the system Look & Feel.", iae);
+        } catch(ClassNotFoundException cnfe) {
+            logger.log(Level.SEVERE, "Unable to find system Look & Feel class.", cnfe);
+        }
     }
 
     /**
