@@ -129,7 +129,7 @@ public class ProcessService {
 
                 if(task.doRename() || task.doCopy() || task.doUnpackage()) {
                     // Build a filter to find the built artifact
-                    String pattern = artifactId + "-" + version + ".*";
+                    String pattern = artifactId + "-" + version + "\\..*";
                     FileFilter filter = new RegexFileFilter(pattern);
                     File[] files = new File(workingDirectory + "/target/").listFiles(filter);
                     String builtTargetPath;
