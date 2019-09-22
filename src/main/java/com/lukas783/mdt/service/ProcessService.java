@@ -102,12 +102,15 @@ public class ProcessService {
 
                 // Validate the version exists
                 if(version == null || version.length() == 0) {
-                    appendExecutionOutput(
-                            "POM file found no 'project.version' tag, skipping task: " +
-                                    task.getTaskName() +
-                                    "." +
-                                    System.getProperty("line.separator"));
-                    continue;
+                    version = pomInfo.getNodeValue("project.parent.version");
+                    if(version == null || version.length() == 0) {
+                        appendExecutionOutput(
+                                "POM file found no 'project.version' or 'project.parent.version' tag, skipping task: " +
+                                        task.getTaskName() +
+                                        "." +
+                                        System.getProperty("line.separator"));
+                        continue;
+                    }
                 }
 
                 // Build and execute the maven command
@@ -125,65 +128,66 @@ public class ProcessService {
                 CommandLine.ExecuteCommandLine(workingDirectory, commandString.toString());
                 commandString = new StringBuilder();
 
-                // Build a filter to find the built artifact
-                FileFilter filter = new RegexFileFilter(pattern);
-                File[] files = new File(workingDirectory + "/target/").listFiles(filter);
-                String builtTargetPath;
+                if(task.doRename() || task.doCopy() || task.doUnpackage()) {
+                    // Build a filter to find the built artifact
+                    FileFilter filter = new RegexFileFilter(pattern);
+                    File[] files = new File(workingDirectory + "/target/").listFiles(filter);
+                    String builtTargetPath;
 
-                // If the filter can find a file, note down its absolute path, otherwise error out
-                if(files != null && files.length > 0) {
-                    builtTargetPath = files[0].getAbsolutePath();
-                } else {
-                    appendExecutionOutput(
-                            "Could not find a built target file given the POM configuration for task: " +
-                                    task.getTaskName() +
-                                    ". Stopping task execution." +
-                                    System.getProperty("line.separator"));
-                    continue;
-                }
-
-                // Build the rename command if the task needs to be renamed.
-                if(task.doRename()) {
-                    // Build the new command string.
-                    commandString.append("ren ");
-                    commandString.append(builtTargetPath);
-                    commandString.append(" ");
-                    commandString.append(task.getRenameString());
-
-                    // Execute the command and reset the command string
-                    CommandLine.ExecuteCommandLine(workingDirectory, commandString.toString());
-                    commandString = new StringBuilder();
-
-                    // Find the new file, if it exists, and update the field values for use elsewhere
-                    pattern = task.getRenameString();
-                    filter = new RegexFileFilter(pattern);
-                    files = new File(workingDirectory + "/target/").listFiles(filter);
-
-                    if(files != null && files.length > 0) {
+                    // If the filter can find a file, note down its absolute path, otherwise error out
+                    if (files != null && files.length > 0) {
                         builtTargetPath = files[0].getAbsolutePath();
                     } else {
                         appendExecutionOutput(
-                                "Unable to find renamed file after renaming for task: " +
+                                "Could not find a built target directory given the POM configuration for task: " +
                                         task.getTaskName() +
                                         ". Stopping task execution." +
                                         System.getProperty("line.separator"));
                         continue;
                     }
+
+                    // Build the rename command if the task needs to be renamed.
+                    if (task.doRename()) {
+                        // Build the new command string.
+                        commandString.append("ren ");
+                        commandString.append(builtTargetPath);
+                        commandString.append(" ");
+                        commandString.append(task.getRenameString());
+
+                        // Execute the command and reset the command string
+                        CommandLine.ExecuteCommandLine(workingDirectory, commandString.toString());
+                        commandString = new StringBuilder();
+
+                        // Find the new file, if it exists, and update the field values for use elsewhere
+                        pattern = task.getRenameString();
+                        filter = new RegexFileFilter(pattern);
+                        files = new File(workingDirectory + "/target/").listFiles(filter);
+
+                        if (files != null && files.length > 0) {
+                            builtTargetPath = files[0].getAbsolutePath();
+                        } else {
+                            appendExecutionOutput(
+                                    "Unable to find renamed file after renaming for task: " +
+                                            task.getTaskName() +
+                                            ". Stopping task execution." +
+                                            System.getProperty("line.separator"));
+                            continue;
+                        }
+                    }
+
+                    // Build the copy command if the task needs to do a copy
+                    if (task.doCopy()) {
+                        // Build the new command string
+                        commandString.append("copy /Y ");
+                        commandString.append(builtTargetPath);
+                        commandString.append(" ");
+                        commandString.append(task.getCopyToDirectory());
+
+                        // Execute the command and reset the command string
+                        CommandLine.ExecuteCommandLine(workingDirectory, commandString.toString());
+                        commandString = new StringBuilder();
+                    }
                 }
-
-                // Build the copy command if the task needs to do a copy
-                if(task.doCopy()) {
-                    // Build the new command string
-                    commandString.append("copy /Y ");
-                    commandString.append(builtTargetPath);
-                    commandString.append(" ");
-                    commandString.append(task.getCopyToDirectory());
-
-                    // Execute the command and reset the command string
-                    CommandLine.ExecuteCommandLine(workingDirectory, commandString.toString());
-                    commandString = new StringBuilder();
-                }
-
                 appendExecutionOutput(
                         "Task with name: " +
                                 task.getTaskName() +
