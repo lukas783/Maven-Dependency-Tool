@@ -88,7 +88,6 @@ public class ProcessService {
                 // Use the PomInfo object to retrieve what the built artifact name will be.
                 String artifactId = pomInfo.getNodeValue("project.artifactId");
                 String version = pomInfo.getNodeValue("project.version");
-                String pattern = artifactId + "-" + version + ".*";
 
                 // Validate the artifactId exists
                 if(artifactId == null || artifactId.length() == 0) {
@@ -130,6 +129,7 @@ public class ProcessService {
 
                 if(task.doRename() || task.doCopy() || task.doUnpackage()) {
                     // Build a filter to find the built artifact
+                    String pattern = artifactId + "-" + version + ".*";
                     FileFilter filter = new RegexFileFilter(pattern);
                     File[] files = new File(workingDirectory + "/target/").listFiles(filter);
                     String builtTargetPath;
